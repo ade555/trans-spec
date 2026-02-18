@@ -7,7 +7,7 @@ import { checkAuth } from "./src/auth.js";
 import { setup } from "./src/setup.js";
 import { generateConfig } from "./src/config.js";
 import { translate } from "./src/translate.js";
-import { dotenv } from "dotenv";
+import dotenv from "dotenv";
 
 dotenv.config();
 

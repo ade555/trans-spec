@@ -1,137 +1,33 @@
 openapi: 3.0.0
 info:
-  title: API de gestión de productos de comercio electrónico
-  description: |
-    Esta API integral te permite gestionar productos en una tienda online.
-
-    **Las características clave incluyen:**
-    - Crear, leer, actualizar y eliminar productos
-    - Gestionar niveles de inventario y notificaciones de stock
-    - Subir y gestionar imágenes de productos
-    - Gestionar reseñas y valoraciones de clientes
-    - Rastrear historial de precios y aplicar descuentos
-
-    Todos los endpoints requieren autenticación mediante token Bearer. Se aplican límites de tasa:
-    1000 solicitudes por hora para cuentas estándar, 10000 para cuentas premium.
-  version: 2.3.0
-  contact:
-    name: Equipo de soporte de API
-    email: apisupport@example.com
-    url: https://docs.example.com
+  title: E-commerce Product Telephone API
+  version: 1.0.0
 servers:
   - url: https://api.example.com/v2
-    description: Servidor de producción - usar para tráfico en vivo
-  - url: https://staging-api.example.com/v2
-    description: Entorno de staging - seguro para pruebas
-tags:
-  - name: Products
-    description: Todo lo relacionado con la gestión del catálogo de productos
-  - name: Inventory
-    description: Niveles de stock, almacenes y seguimiento de disponibilidad
-  - name: Reviews
-    description: Comentarios de clientes y valoraciones de productos
-  - name: Media
-    description: Subida de imágenes y vídeos para productos
 paths:
   /products:
     get:
-      summary: Listar todos los productos del catálogo
-      description: |
-        Recupera una lista paginada de productos. Este endpoint admite filtrado avanzado
-        por múltiples criterios incluyendo rango de precios, categorías, marcas y estado de disponibilidad.
-
-        **Notas de rendimiento:**
-        - Los resultados se almacenan en caché durante 5 minutos
-        - Máximo 100 elementos por página
-        - Usa el parámetro `fields` para reducir el tamaño de la respuesta
-
-        **Opciones de ordenación:**
-        Puedes ordenar por: precio (asc/desc), nombre, fecha de creación, popularidad, valoración
+      summary: List products
       operationId: listProducts
-      tags:
-        - Products
       parameters:
         - name: page
           in: query
-          description: Número de página para la paginación, comenzando desde 1. Usa con el parámetro `limit` para navegar por los resultados.
-          required: false
           schema:
             type: integer
             default: 1
-            minimum: 1
-            example: 2
         - name: limit
           in: query
-          description: |
-            Número de productos a devolver por página. 
-
-            **Límites:**
-            - Mínimo: 1
-            - Máximo: 100
-            - Predeterminado: 20
-          required: false
           schema:
             type: integer
             default: 20
-            minimum: 1
             maximum: 100
-        - name: category
-          in: query
-          description: Filtrar productos por slug o ID de categoría. Admite múltiples categorías separadas por comas.
-          required: false
-          schema:
-            type: string
-            example: "electronics,smartphones"
-        - name: min_price
-          in: query
-          description: Precio mínimo en USD. Solo se devolverán productos con precio >= este valor.
-          required: false
-          schema:
-            type: number
-            format: float
-            minimum: 0
-            example: 29.99
-        - name: max_price
-          in: query
-          description: Precio máximo en USD. Solo se devolverán productos con precio <= este valor.
-          required: false
-          schema:
-            type: number
-            format: float
-            minimum: 0
-            example: 999.99
         - name: in_stock
           in: query
-          description: |
-            Filtrar por estado de disponibilidad:
-            - `true`: Mostrar solo productos actualmente en stock
-            - `false`: Mostrar solo productos sin stock
-            - No especificado: Mostrar todos los productos independientemente del stock
-          required: false
           schema:
             type: boolean
-        - name: sort
-          in: query
-          description: |
-            Orden de clasificación para los resultados. Formato: `campo:dirección`
-
-            Campos disponibles: price, name, created_at, popularity, rating
-            Dirección: asc (ascendente) o desc (descendente)
-          required: false
-          schema:
-            type: string
-            default: "created_at:desc"
-            example: "price:asc"
-        - name: search
-          in: query
-          description: Búsqueda de texto completo en nombre, descripción y etiquetas del producto. Admite coincidencias parciales y búsqueda difusa.
-          required: false
-          schema:
-            type: string
-            example: "auriculares inalámbricos"
       responses:
         "200":
-          description: Lista de productos recuperada exitosamente
+          description: Success
           content:
             application/json:
               schema:
@@ -139,388 +35,96 @@ paths:
                 properties:
                   data:
                     type: array
-                    description: Array de objetos de producto que coinciden con los criterios de consulta
                     items:
                       $ref: "#/components/schemas/Product"
-                  pagination:
-                    type: object
-                    description: Metadatos de paginación para navegar por los resultados
-                    properties:
-                      current_page:
-                        type: integer
-                        description: Número de página actual
-                        example: 1
-                      total_pages:
-                        type: integer
-                        description: Número total de páginas disponibles
-                        example: 45
-                      total_items:
-                        type: integer
-                        description: Número total de productos que coinciden con los filtros
-                        example: 892
-                      per_page:
-                        type: integer
-                        description: Número de elementos por página
-                        example: 20
-        "400":
-          description: Parámetros de solicitud no válidos. Consulta el mensaje de error para obtener detalles sobre qué parámetro es incorrecto.
         "401":
-          description: Autenticación fallida. Tu clave API falta o no es válida.
-        "429":
-          description: Límite de tasa excedido. Has realizado demasiadas solicitudes en un período corto. Por favor, espera antes de reintentar.
+          description: Unauthorized
     post:
-      summary: Crear un nuevo producto
-      description: |
-        Crea un nuevo producto en el catálogo. Este es un proceso de varios pasos:
-
-        1. **Crear el producto** con información básica (este endpoint)
-        2. Subir imágenes del producto usando el endpoint `/products/{id}/images`
-        3. Establecer niveles de inventario usando el endpoint `/products/{id}/inventory`
-        4. Publicar el producto actualizando su estado a "active"
-
-        **Notas importantes:**
-        - Los productos se crean en estado "draft" por defecto
-        - El SKU debe ser único en todo tu catálogo
-        - El precio debe ser mayor que cero
-        - Se requiere al menos una categoría
+      summary: Create a product
       operationId: createProduct
-      tags:
-        - Products
       requestBody:
         required: true
-        description: Detalles del producto para crear el nuevo artículo en tu catálogo
         content:
           application/json:
             schema:
               $ref: "#/components/schemas/ProductInput"
       responses:
         "201":
-          description: Producto creado exitosamente. Usa el ID devuelto para subir imágenes y gestionar el inventario.
+          description: Created
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/Product"
         "400":
-          description: Error de validación. Uno o más campos requeridos faltan o contienen datos no válidos.
-        "401":
-          description: No autorizado. Por favor, proporciona una clave API válida en el encabezado Authorization.
+          description: Validation error
         "409":
-          description: Conflicto. Ya existe un producto con este SKU en tu catálogo.
+          description: SKU already exists
   /products/{productId}:
     get:
-      summary: Obtener información detallada sobre un producto específico
-      description: |
-        Recupera los detalles completos de un solo producto incluyendo:
-        - Información básica (nombre, descripción, precio)
-        - Todas las imágenes y medios asociados
-        - Niveles de inventario actuales en todos los almacenes
-        - Reseñas y valoraciones de clientes
-        - Historial de precios y descuentos activos
-        - Productos relacionados y recomendaciones
+      summary: Get a product
       operationId: getProduct
-      tags:
-        - Products
       parameters:
         - name: productId
           in: path
           required: true
-          description: El identificador único (UUID o SKU) del producto que deseas recuperar
           schema:
             type: string
-            example: "prod_a1b2c3d4e5"
-        - name: include
-          in: query
-          description: |
-            Lista separada por comas de recursos relacionados para incluir en la respuesta.
-
-            Opciones disponibles:
-            - `images`: Fotos y medios del producto
-            - `reviews`: Reseñas y valoraciones de clientes
-            - `inventory`: Niveles de stock por almacén
-            - `related`: Productos similares o comprados frecuentemente juntos
-          required: false
-          schema:
-            type: string
-            example: "images,reviews,inventory"
       responses:
         "200":
-          description: Detalles del producto obtenidos correctamente
+          description: Success
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/Product"
-        "401":
-          description: Se requiere autenticación. Por favor, proporciona credenciales válidas.
         "404":
-          description: Producto no encontrado. El ID especificado no existe en el catálogo.
-    put:
-      summary: Actualizar un producto existente
-      description: |
-        Actualiza uno o más campos de un producto existente. Solo se actualizarán los campos que incluyas 
-        en la solicitud; todos los demás campos permanecerán sin cambios (actualización parcial).
-
-        **Lo que puedes actualizar:**
-        - Nombre y descripción del producto
-        - Precio y moneda
-        - Categorías y etiquetas
-        - Estado (borrador, activo, archivado)
-        - Metadatos SEO
-
-        **Lo que no puedes actualizar:**
-        - ID del producto o SKU (inmutable)
-        - Fecha de creación
-        - Datos históricos de ventas
-      operationId: updateProduct
-      tags:
-        - Products
-      parameters:
-        - name: productId
-          in: path
-          required: true
-          description: El identificador único del producto a actualizar
-          schema:
-            type: string
-      requestBody:
-        required: true
-        description: Campos a actualizar. Solo incluye los campos que deseas cambiar.
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/ProductInput"
-      responses:
-        "200":
-          description: Producto actualizado correctamente
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Product"
-        "400":
-          description: Datos de entrada no válidos. Consulta el mensaje de error para conocer los fallos de validación específicos.
-        "404":
-          description: Producto no encontrado
-        "409":
-          description: Conflicto de actualización. El SKU que intentas usar ya está siendo utilizado por otro producto.
+          description: Not found
     delete:
-      summary: Eliminar un producto del catálogo
-      description: |
-        Elimina permanentemente un producto de tu catálogo. Esta acción no se puede deshacer.
-
-        **Advertencias importantes:**
-        - Todas las imágenes y medios asociados también se eliminarán
-        - Los datos históricos de pedidos permanecerán intactos pero harán referencia a un producto eliminado
-        - Los carritos activos que contengan este producto se actualizarán automáticamente
-        - No puedes eliminar productos que formen parte de pedidos activos
-
-        **Buena práctica:** Considera archivar productos en lugar de eliminarlos para preservar los datos históricos.
+      summary: Delete a product
       operationId: deleteProduct
-      tags:
-        - Products
       parameters:
         - name: productId
           in: path
           required: true
-          description: El identificador único del producto a eliminar permanentemente
           schema:
             type: string
       responses:
         "204":
-          description: Producto eliminado correctamente. No se devuelve contenido.
+          description: Deleted
         "404":
-          description: Producto no encontrado. Es posible que ya haya sido eliminado.
-        "409":
-          description: No se puede eliminar el producto. Está referenciado en pedidos activos o envíos pendientes.
-  /products/{productId}/reviews:
-    get:
-      summary: Obtener todas las reseñas de clientes de un producto
-      description: |
-        Recupera todas las reseñas y valoraciones de clientes de un producto específico.
-        Las reseñas se ordenan por utilidad (las más útiles primero) de forma predeterminada.
-
-        **Opciones de filtrado:**
-        - Filtrar por valoración de estrellas (1-5 estrellas)
-        - Filtrar solo por compra verificada
-        - Filtrar por rango de fechas
-        - Incluir/excluir reseñas con fotos
-      operationId: getProductReviews
-      tags:
-        - Reseñas
-      parameters:
-        - name: productId
-          in: path
-          required: true
-          description: ID del producto para obtener las reseñas
-          schema:
-            type: string
-        - name: min_rating
-          in: query
-          description: Valoración mínima de estrellas (1-5). Solo mostrar reseñas con esta valoración o superior.
-          schema:
-            type: integer
-            minimum: 1
-            maximum: 5
-        - name: verified_only
-          in: query
-          description: Si es verdadero, solo mostrar reseñas de clientes que realmente compraron este producto
-          schema:
-            type: boolean
-            default: false
-      responses:
-        "200":
-          description: Reseñas recuperadas correctamente
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  reviews:
-                    type: array
-                    description: Array de reseñas de clientes
-                    items:
-                      $ref: "#/components/schemas/Review"
-                  summary:
-                    type: object
-                    description: Estadísticas agregadas sobre todas las reseñas
-                    properties:
-                      average_rating:
-                        type: number
-                        description: Calificación promedio de estrellas en todas las reseñas
-                        example: 4.3
-                      total_reviews:
-                        type: integer
-                        description: Número total de reseñas
-                        example: 127
-                      rating_distribution:
-                        type: object
-                        description: Recuento de reseñas por calificación de estrellas
-                        properties:
-                          five_star:
-                            type: integer
-                            example: 85
-                          four_star:
-                            type: integer
-                            example: 25
-                          three_star:
-                            type: integer
-                            example: 10
-                          two_star:
-                            type: integer
-                            example: 5
-                          one_star:
-                            type: integer
-                            example: 2
+          description: Not found
 components:
   schemas:
     Product:
       type: object
-      description: Información completa del producto incluyendo metadatos y relaciones
       properties:
         id:
           type: string
-          description: Identificador único del producto (formato UUID)
           example: "prod_a1b2c3d4e5"
         sku:
           type: string
-          description: Stock Keeping Unit - código único del producto para gestión de inventario
           example: "WIDGET-001-BLU"
         name:
           type: string
-          description: Nombre visible del producto
-          example: "Auriculares inalámbricos Bluetooth"
-        description:
-          type: string
-          description: Descripción detallada del producto compatible con formato markdown
-          example: "Auriculares supraaurales premium con cancelación activa de ruido y 30 horas de batería"
         price:
           type: number
-          format: float
-          description: Precio de venta actual en USD
-          example: 199.99
-        currency:
-          type: string
-          description: Código de moneda ISO 4217
-          example: "USD"
-        stock_quantity:
-          type: integer
-          description: Total de unidades disponibles en todos los almacenes
-          example: 450
         status:
           type: string
-          enum:
-            - draft
-            - active
-            - archived
-            - out_of_stock
-          description: |
-            Estado actual del producto:
-            - draft: aún no publicado, visible solo para administradores
-            - active: en línea y disponible para compra
-            - archived: ya no está a la venta pero se conserva para registros históricos
-            - out_of_stock: temporalmente no disponible
+          enum: [draft, active, archived, out_of_stock]
+        stock_quantity:
+          type: integer
         created_at:
           type: string
           format: date-time
-          description: Marca de tiempo de cuando se creó el producto por primera vez
-          example: "2024-01-15T10:30:00Z"
-        updated_at:
-          type: string
-          format: date-time
-          description: Marca de tiempo de la actualización más reciente de este producto
-          example: "2024-02-10T14:22:00Z"
     ProductInput:
       type: object
-      description: Datos requeridos para crear o actualizar un producto
-      required:
-        - name
-        - price
-        - sku
+      required: [name, price, sku]
       properties:
         name:
           type: string
-          description: Nombre del producto (2-200 caracteres)
-          minLength: 2
-          maxLength: 200
-        description:
-          type: string
-          description: Descripción detallada (compatible con markdown, máximo 5000 caracteres)
-          maxLength: 5000
         sku:
           type: string
-          description: SKU único para seguimiento de inventario
-          pattern: "^[A-Z0-9-]+$"
         price:
           type: number
-          format: float
           minimum: 0.01
-          description: El precio debe ser mayor que cero
-    Review:
-      type: object
-      description: Reseña del cliente con valoración y comentarios opcionales
-      properties:
-        id:
+        description:
           type: string
-          description: Identificador único de la reseña
-        rating:
-          type: integer
-          minimum: 1
-          maximum: 5
-          description: Valoración de estrellas de 1 (deficiente) a 5 (excelente)
-        title:
-          type: string
-          description: Título breve de la reseña
-          example: "¡Excelente calidad de sonido!"
-        comment:
-          type: string
-          description: Texto detallado de la reseña del cliente
-        author_name:
-          type: string
-          description: Nombre del revisor
-        verified_purchase:
-          type: boolean
-          description: Verdadero si el revisor realmente compró este producto
-        helpful_count:
-          type: integer
-          description: Número de usuarios que encontraron útil esta reseña
-        created_at:
-          type: string
-          format: date-time
-          description: Cuándo se envió la reseña

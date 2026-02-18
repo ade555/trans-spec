@@ -2,7 +2,7 @@ import fs from "fs";
 import path from "path";
 import chalk from "chalk";
 import ora from "ora";
-import { dotenv } from "dotenv";
+import dotenv from "dotenv";
 
 dotenv.config();
 

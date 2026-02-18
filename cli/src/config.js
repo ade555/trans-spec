@@ -2,7 +2,7 @@ import fs from "fs";
 import path from "path";
 import chalk from "chalk";
 import ora from "ora";
-import { dotenv } from "dotenv";
+import dotenv from "dotenv";
 
 dotenv.config();
 
@@ -51,6 +51,8 @@ export async function generateConfig(languages, source = "en") {
         },
       },
     };
+
+    fs.writeFileSync(CONFIG_PATH, JSON.stringify(config, null, 2));
 
     if (newTargets.length > 0) {
       spinner.succeed(
