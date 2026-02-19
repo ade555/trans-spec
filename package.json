@@ -1,14 +1,47 @@
 {
-  "name": "apidocs-i18n",
+  "name": "glossia",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "description": "Translate your API documentation into any language in seconds",
+  "main": "cli/index.js",
   "scripts": {
-    "cli": "node cli/index.js",
-    "viewer": "npm run dev --prefix viewer"
+    "test": "echo \"No tests yet\" && exit 0"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "type": "module"
+  "bin": {
+    "glossia": "./cli/index.js"
+  },
+  "type": "module",
+  "keywords": [
+    "api",
+    "documentation",
+    "openapi",
+    "swagger",
+    "translation",
+    "i18n",
+    "multilingual",
+    "ai"
+  ],
+  "author": "Ademola Thompson",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ade555/glossia.git"
+  },
+  "bugs": {
+    "url": "https://github.com/ade555/glossia/issues"
+  },
+  "homepage": "https://github.com/ade555/glossia#readme",
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "files": [
+    "cli",
+    "viewer",
+    "README.md",
+    "LICENSE"
+  ],
+  "dependencies": {
+    "chalk": "^5.6.2",
+    "commander": "^14.0.3",
+    "ora": "^9.3.0"
+  }
 }

@@ -2,15 +2,9 @@ import { spawn } from "child_process";
 import chalk from "chalk";
 import ora from "ora";
 import path from "path";
-import dotenv from "dotenv";
 
-dotenv.config();
-
-const GLOSSIA_DIR = process.env.GLOSSIA_DIR;
+const GLOSSIA_DIR = ".glossia";
 const MAX_RETRIES = 2;
-
-console.log("GLOSSIA_DIR:", GLOSSIA_DIR);
-console.log("Resolved path:", path.resolve(GLOSSIA_DIR));
 
 async function runTranslation() {
   return new Promise((resolve, reject) => {

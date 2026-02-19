@@ -1,0 +1,9 @@
+node_modules/
+.env
+.env.*
+.lingo/
+lingo/
+dist/
+vite.config.generated.js
+*.log
+.glossia/

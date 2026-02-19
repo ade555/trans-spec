@@ -37,3 +37,7 @@ build/
 .docslingo
 .glossia
 i18n.cache
+api.yaml
+api2.yaml
+*.tgz
+test/

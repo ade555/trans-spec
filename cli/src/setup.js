@@ -2,11 +2,8 @@ import fs from "fs";
 import path from "path";
 import chalk from "chalk";
 import ora from "ora";
-import dotenv from "dotenv";
 
-dotenv.config();
-
-const GLOSSIA_DIR = process.env.GLOSSIA_DIR;
+const GLOSSIA_DIR = ".glossia";
 const I18N_DIR = path.join(GLOSSIA_DIR, "i18n");
 
 export async function setup(specPath, sourceLanguage) {

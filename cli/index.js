@@ -7,11 +7,7 @@ import { checkAuth } from "./src/auth.js";
 import { setup } from "./src/setup.js";
 import { generateConfig } from "./src/config.js";
 import { translate } from "./src/translate.js";
-import dotenv from "dotenv";
-
-dotenv.config();
-
-const GLOSSIA_DIR = process.env.GLOSSIA_DIR;
+const GLOSSIA_DIR = ".glossia";
 
 program
   .name("glossia")
@@ -53,7 +49,7 @@ program
   .description("Start the local docs viewer")
   .option("-p, --port <port>", "Port to run server on", "3000")
   .action(async (options) => {
-    const { spawn } = await import("child_process");
+    const { spawn, execSync } = await import("child_process");
     const path = await import("path");
     const fs = await import("fs");
     const readline = await import("readline");
@@ -201,6 +197,28 @@ export default defineConfig({
     );
 
     console.log(chalk.green("✔ Setup complete"));
+    // Install viewer dependencies if needed
+    const viewerNodeModules = path.join(viewerDir, "node_modules");
+    if (!fs.existsSync(viewerNodeModules)) {
+      console.log(
+        chalk.yellow(
+          "\n📦 Installing viewer dependencies (one-time setup)...\n",
+        ),
+      );
+
+      try {
+        execSync("npm install", {
+          cwd: viewerDir,
+          stdio: "inherit",
+          shell: true,
+        });
+        console.log(chalk.green("\n✔ Dependencies installed\n"));
+      } catch (err) {
+        console.log(chalk.red("\n✖ Failed to install dependencies"));
+        console.log(err);
+        process.exit(1);
+      }
+    }
     console.log(
       chalk.cyan(`\nStarting server on http://localhost:${options.port}\n`),
     );
