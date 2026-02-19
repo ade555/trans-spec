@@ -8,6 +8,7 @@ import { setup } from "./src/setup.js";
 import { generateConfig } from "./src/config.js";
 import { translate } from "./src/translate.js";
 const GLOSSIA_DIR = ".glossia";
+const EJECTED_VIEWER_DIR = "glossia-viewer";
 
 program
   .name("glossia")
@@ -45,6 +46,71 @@ program
   });
 
 program
+  .command("eject")
+  .description(
+    `Copy the viewer source into ./${EJECTED_VIEWER_DIR} so you can customize and deploy it`,
+  )
+  .action(async () => {
+    const fs = await import("fs");
+    const { fileURLToPath } = await import("url");
+
+    const __dirname = path.dirname(fileURLToPath(import.meta.url));
+    const packageViewerDir = path.resolve(__dirname, "../viewer");
+    const ejectedViewerDir = path.join(process.cwd(), EJECTED_VIEWER_DIR);
+
+    console.log(chalk.bold("\n📦 Glossia Eject\n"));
+
+    if (!fs.existsSync(packageViewerDir)) {
+      console.log(
+        chalk.red("✖ Could not find the viewer source inside the package."),
+      );
+      console.log(chalk.gray(`  Looked in: ${packageViewerDir}`));
+      process.exit(1);
+    }
+
+    if (fs.existsSync(ejectedViewerDir)) {
+      console.log(
+        chalk.red(
+          `✖ ${EJECTED_VIEWER_DIR}/ already exists. Remove it first if you want to eject again.\n`,
+        ),
+      );
+      process.exit(1);
+    }
+
+    console.log(
+      chalk.white(
+        `Copying viewer into ${chalk.cyan(EJECTED_VIEWER_DIR + "/")}...\n`,
+      ),
+    );
+
+    try {
+      console.log(chalk.gray(`  From: ${packageViewerDir}`));
+      console.log(chalk.gray(`  To:   ${ejectedViewerDir}`));
+      fs.cpSync(packageViewerDir, ejectedViewerDir, {
+        recursive: true,
+        filter: (src) => {
+          const parts = src.replace(packageViewerDir, "").split(path.sep);
+          return !parts.includes("node_modules");
+        },
+      });
+    } catch (err) {
+      console.log(chalk.red("\n✖ Failed to copy viewer files:"));
+      console.log(err);
+      process.exit(1);
+    }
+
+    console.log(chalk.green(`✔ Viewer ejected to ${EJECTED_VIEWER_DIR}/\n`));
+    console.log(chalk.white("Next steps:"));
+    console.log(chalk.cyan(`  cd ${EJECTED_VIEWER_DIR} && npm install`));
+    console.log(
+      chalk.white("\nThe viewer will be used automatically when you run:"),
+    );
+    console.log(chalk.cyan("  npx glossia serve\n"));
+    console.log(chalk.white("Or run it directly for full control:"));
+    console.log(chalk.cyan(`  cd ${EJECTED_VIEWER_DIR} && npm run dev\n`));
+  });
+
+program
   .command("serve")
   .description("Start the local docs viewer")
   .option("-p, --port <port>", "Port to run server on", "3000")
@@ -56,7 +122,19 @@ program
     const { fileURLToPath } = await import("url");
 
     const __dirname = path.dirname(fileURLToPath(import.meta.url));
-    const viewerDir = path.resolve(__dirname, "../viewer");
+
+    // Prefer ejected viewer in cwd over the package viewer
+    const ejectedViewerDir = path.join(process.cwd(), EJECTED_VIEWER_DIR);
+    const packageViewerDir = path.resolve(__dirname, "../viewer");
+    const isEjected = fs.existsSync(ejectedViewerDir);
+    const viewerDir = isEjected ? ejectedViewerDir : packageViewerDir;
+
+    if (isEjected) {
+      console.log(
+        chalk.cyan(`\n🔧 Using ejected viewer from ./${EJECTED_VIEWER_DIR}\n`),
+      );
+    }
+
     const publicDir = path.join(viewerDir, "public");
     const glossiaSource = path.join(process.cwd(), ".glossia");
     const glossiaDest = path.join(publicDir, "glossia");
