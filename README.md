@@ -28,6 +28,10 @@ Done. Your API docs are now available in 5 languages with a beautiful, browsable
 
 ---
 
+## Demo Video
+
+Watch a video of how trans-spec works on [Youtube](https://youtu.be/PtnwsQRQzec).
+
 ## Features
 
 - **AI-Powered Translation** - Uses [Lingo.dev](https://lingo.dev) for high-quality, context-aware translations
